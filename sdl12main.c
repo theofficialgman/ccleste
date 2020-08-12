@@ -39,7 +39,7 @@ Mix_Music* mus[6] = {NULL};
 #ifdef _3DS
 static const int scale = 2;
 #else
-static int scale = 4;
+static int scale = 6;
 #endif
 
 static const SDL_Color base_palette[16] = {
@@ -202,7 +202,7 @@ static void p8_print(char* str, float x, float y, int col);
 static Mix_Music* current_music = NULL;
 
 int main(int argc, char** argv) {
-	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
+	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) == 0);
 	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
 #ifdef _3DS
 	fsInit();
@@ -229,6 +229,12 @@ int main(int argc, char** argv) {
 	}
 	ResetPalette();
 	SDL_ShowCursor(0);
+
+//new stuff
+  SDL_Joystick *joystick;
+  SDL_JoystickEventState(SDL_ENABLE);
+  joystick = SDL_JoystickOpen(0);
+//
 
 	printf("game state size %gkb\n", (long unsigned)Celeste_P8_get_state_size()/1024.);
 
@@ -278,15 +284,18 @@ int main(int argc, char** argv) {
 	Celeste_P8_init();
 
 	printf("ready\n");
+	printf("%i buttons.\n\n", SDL_JoystickNumButtons(joystick));
 
 	void* game_state = NULL;
 	Mix_Music* game_state_music = NULL;
 
 	int running = 1;
 	int paused = 0;
+	int b2 = -1;
+	int b3=-1;
+	SDL_WM_ToggleFullScreen(screen);
 	while (running) {
 		Uint8* kbstate = SDL_GetKeyState(NULL);
-		
 		static int reset_input_timer = 0;
 		//hold shift+return+r (select+start+y) to reset
 		if (initial_game_state != NULL && kbstate[SDLK_LSHIFT] && kbstate[SDLK_RETURN] && (kbstate[SDLK_r] || kbstate[SDLK_f])) {
@@ -304,9 +313,11 @@ int main(int argc, char** argv) {
 		} else reset_input_timer = 0;
 		SDL_Event ev;
 		while (SDL_PollEvent(&ev)) switch (ev.type) {
+			void SDL_JoystickUpdate(void);
 			case SDL_QUIT: running = 0; break;
 			case SDL_KEYDOWN: {
 				if (ev.key.keysym.sym == SDLK_ESCAPE) {
+					SDL_JoystickClose(joystick);
 					running = 0;
 					break;
 				} else if (ev.key.keysym.sym == SDLK_RETURN) { //do pause
@@ -342,25 +353,118 @@ int main(int argc, char** argv) {
 				}
 				//fallthrough
 			}
-			case SDL_KEYUP: {
-				int down = ev.type == SDL_KEYDOWN;
+			case SDL_JOYBUTTONDOWN: {
+				if (ev.jbutton.button == 11) {
+					SDL_JoystickClose(joystick);
+					running = 0;
+					break;
+				} else if (ev.jbutton.button == 10) { //do pause
+					if (paused) Mix_Resume(-1), Mix_ResumeMusic(); else Mix_Pause(-1), Mix_PauseMusic();
+					paused = !paused;
+					break;
+				//} else if (ev.key.keysym.sym == SDLK_f && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_RETURN])) {
+					//SDL_WM_ToggleFullScreen(screen);
+					//break;
+				//} else if (0 && ev.key.keysym.sym == SDLK_5) {
+					//Celeste_P8__DEBUG();
+					//break; 
+				} else if (SDL_JoystickGetButton(joystick, 9) != 0 && SDL_JoystickGetButton(joystick, 2) != 0) { //save state
+					game_state = game_state ? game_state : SDL_malloc(Celeste_P8_get_state_size());
+					if (game_state) {
+						printf("save state\n");
+						Celeste_P8_save_state(game_state);
+						game_state_music = current_music;
+					}
+					break;
+				} else if (SDL_JoystickGetButton(joystick, 9) != 0 && SDL_JoystickGetButton(joystick, 3) != 0) { //load state
+					if (game_state) {
+						printf("load state\n");
+						if (paused) paused = 0, Mix_Resume(-1), Mix_ResumeMusic();
+						Celeste_P8_load_state(game_state);
+						if (current_music != game_state_music) {
+							Mix_HaltMusic();
+							current_music = game_state_music;
+							if (game_state_music) Mix_PlayMusic(game_state_music, -1);
+						}
+					}
+					break;
+				} 
+			}
+			case SDL_JOYBUTTONUP: { //Handle Button Presses
+				int down = ev.type == SDL_JOYBUTTONDOWN;
 				int b = -1;
-				switch (ev.key.keysym.sym) {
-					case SDLK_LEFT:  b = 0; break;
-					case SDLK_RIGHT: b = 1; break;
-					case SDLK_UP:    b = 2; break;
-					case SDLK_DOWN:  b = 3; break;
-					case SDLK_z: case SDLK_c: case SDLK_n: case SDLK_a:
-						b = 4; break;
-					case SDLK_x: case SDLK_v: case SDLK_m: case SDLK_b:
-						b = 5; break;
+				switch (ev.jbutton.button) {
+					case 16:  b = 0; break;
+					case 17: b = 1; break;
+					case 14:    b = 2; break;
+					case 15:  b = 3; break;
+					case  0: case 1: b=4; break;
+					case  3: case 2: b=5; break;
 					default: break;
 				}
-				if (b >= 0) {
-					if (down) buttons_state |=  (1<<b);
-					else      buttons_state &= ~(1<<b);
+				if (b>=0){
+					if (down) buttons_state |= (1<<b);
+					else buttons_state &= ~(1<<b);
 				}
+				
 			}
+			case SDL_JOYAXISMOTION:{ // Handle Joystick Motion
+				int down = 1;
+				int b = -1;
+				int deadzone = 10000;
+				if (ev.jaxis.axis == 0){
+					if (ev.jaxis.value > deadzone) b=b2=1;
+					else if (ev.jaxis.value < -deadzone) b=b2=0;
+					else {
+						buttons_state &= ~(1<<1);
+						buttons_state &= ~(1<<0);
+						down = 0;
+					}
+					if (b2>=0){
+					if (down) buttons_state |= (1<<b);
+					else buttons_state &= ~(1<<b2);
+				}
+				}
+				else if (ev.jaxis.axis == 1){
+					if (ev.jaxis.value > deadzone) b=b3=3;
+					else if (ev.jaxis.value < -deadzone) b=b3=2;
+					else {
+						buttons_state &= ~(1<<3);
+						buttons_state &= ~(1<<2);
+						down = 0;
+					}
+				if (b3>=0){
+					if (down) buttons_state |= (1<<b);
+					else buttons_state &= ~(1<<b3);
+				}	
+				}
+				//else down = 0;
+				
+				//if (b2>=0){
+					//if (down) buttons_state |= (1<<b);
+					//else buttons_state &= ~(1<<b2);
+				//}
+			
+			}
+			//case SDL_KEYUP: {
+				//int down = ev.type == SDL_KEYDOWN;
+				//int b = -1;
+				//switch (ev.key.keysym.sym) {
+					//case SDLK_LEFT:  b = 0; break;
+					//case SDLK_RIGHT: b = 1; break;
+					//case SDLK_UP:    b = 2; break;
+					//case SDLK_DOWN:  b = 3; break;
+					//case SDLK_z: case SDLK_c: case SDLK_n: case SDLK_a:
+						//b = 4; break;
+					//case SDLK_x: case SDLK_v: case SDLK_m: case SDLK_b:
+						//b = 5; break;
+					//default: break;
+				//}
+				//if (b >= 0) {
+					//if (down) buttons_state |=  (1<<b);
+					//else      buttons_state &= ~(1<<b);
+				//}
+			//}
 		}
 
 		if (paused) {
