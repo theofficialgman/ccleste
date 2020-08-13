@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Exec=/usr/share/celeste/celeste-sdl12
+Path=/usr/share/celeste
+Name=Celeste
+Comment=celeste
+Icon=/usr/shar/celeste/icon.png
+Categories=Game
