@@ -2,7 +2,7 @@ clear
 cd
 echo "Celeste Pico 8 script started!"
 echo "Downloading the game"
-wget https://github.com/theofficialgman/ccleste/archive/v1.04.2.zip
+wget https://github.com/theofficialgman/ccleste/archive/v1.04.3.zip
 unzip v1.04.3.zip
 rm v1.04.3.zip
 rn ccleste-1.04.3 celeste
