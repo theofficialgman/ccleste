@@ -7,6 +7,7 @@ unzip v1.04.3.zip
 rm v1.04.3.zip
 mv ccleste-1.04.3 celeste
 cd celeste
+chmod 777 celeste-sdl12
 echo
 echo "Erasing files to save space..."
 echo
