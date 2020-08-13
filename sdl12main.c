@@ -303,7 +303,7 @@ int main(int argc, char** argv) {
 		void SDL_JoystickUpdate(void);
 		static int reset_input_timer = 0;
 		//hold shift+return+r (select+start+y) to reset
-		if (initial_game_state != NULL && kbstate[SDLK_LSHIFT] && kbstate[SDLK_RETURN] && (kbstate[SDLK_r] || kbstate[SDLK_f])) {
+		if (initial_game_state != NULL && SDL_JoystickGetButton(joystick, 9) && SDL_JoystickGetButton(joystick, 10)) {
 			reset_input_timer++;
 			if (reset_input_timer >= 30) {
 				reset_input_timer=0;
@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
 				//} else if (0 && ev.key.keysym.sym == SDLK_5) {
 					//Celeste_P8__DEBUG();
 					//break; 
-				} else if (SDL_JoystickGetButton(joystick, 9) != 0 && SDL_JoystickGetButton(joystick, 2) != 0) { //save state
+				} else if (SDL_JoystickGetButton(joystick, 3) != 0 && SDL_JoystickGetButton(joystick, 6) != 0) { //save state
 					game_state = game_state ? game_state : SDL_malloc(Celeste_P8_get_state_size());
 					if (game_state) {
 						printf("save state\n");
@@ -384,7 +384,7 @@ int main(int argc, char** argv) {
 						game_state_music = current_music;
 					}
 					break;
-				} else if (SDL_JoystickGetButton(joystick, 9) != 0 && SDL_JoystickGetButton(joystick, 3) != 0) { //load state
+				} else if (SDL_JoystickGetButton(joystick, 3) != 0 && SDL_JoystickGetButton(joystick, 5) != 0) { //load state
 					if (game_state) {
 						printf("load state\n");
 						if (paused) paused = 0, Mix_Resume(-1), Mix_ResumeMusic();
@@ -448,8 +448,8 @@ int main(int argc, char** argv) {
 					//case 17: b = 1; break;
 					//case 14:    b = 2; break;
 					//case 15:  b = 3; break;
-					case  0: case 1: b=4; break;
-					case  3: case 2: b=5; break;
+					case  3: case 1: b=4; break;
+					case 0: case  2: b=5; break;
 					default: break;
 				}
 				if (b>=0){
