@@ -291,9 +291,12 @@ int main(int argc, char** argv) {
 
 	int running = 1;
 	int paused = 0;
+	int b=-1;
 	int b2 = -1;
 	int b3=-1;
 	int deadzone = 8000;
+	Sint16 axis0, axis1;
+	Uint8 but0, but1, but2, but3;
 	SDL_WM_ToggleFullScreen(screen);
 	while (running) {
 		Uint8* kbstate = SDL_GetKeyState(NULL);
@@ -317,6 +320,9 @@ int main(int argc, char** argv) {
 		//printf("\nvalues : juse = %d", juse);
 		while (SDL_PollEvent(&ev)) switch (ev.type) {
 			case SDL_QUIT: running = 0; break;
+			
+			//disable keyboard controls to prevent accidental presses
+			
 			//case SDL_KEYDOWN: {
 				//if (ev.key.keysym.sym == SDLK_ESCAPE) {
 					//SDL_JoystickClose(joystick);
@@ -392,13 +398,17 @@ int main(int argc, char** argv) {
 					break;
 				} 
 			}
+			//commented out controll method doesn't work
+			//left in for reference
+			
 			//printf("\nvalues : juse = %d", juse);
 			//case SDL_JOYAXISMOTION:{ // Handle Joystick Motion
 				//int down = 1;
 				//int b = -1;
 				//if (ev.jaxis.axis == 0){
-					//if (ev.jaxis.value > deadzone) b=b2=1;
-					//else if (ev.jaxis.value < -deadzone) {b=b2=0;}
+					////printf("\nvalues : axisnum0 = %d", ev.jaxis.value);
+					//if (ev.jaxis.value > deadzone) {b=b2=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
+					//else if (ev.jaxis.value < -deadzone) {b=b2=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
 					//else {
 						
 						//buttons_state &= ~(1<<1);
@@ -406,23 +416,18 @@ int main(int argc, char** argv) {
 						//down = 0;
 					//}
 					////printf("\nvalues : axis_values = %d", ev.jaxis.value);
-				//if (b2>=0){
-					//if (down) buttons_state |= (1<<b);
-					//else buttons_state &= ~(1<<b2);
-				//}
+				
 				//}
 				//else if (ev.jaxis.axis == 1){
-					//if (ev.jaxis.value > deadzone) {b=b3=3;}
-					//else if (ev.jaxis.value < -deadzone) {b=b3=2;}
+					////printf("\nvalues : axisnum1 = %d", ev.jaxis.value);
+					//if (ev.jaxis.value > deadzone) {b=b3=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
+					//else if (ev.jaxis.value < -deadzone) {b=b3=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
 					//else {
 						//buttons_state &= ~(1<<3);
 						//buttons_state &= ~(1<<2);
 						//down = 0;
 					//}
-				//if (b3>=0){
-					//if (down) buttons_state |= (1<<b);
-					//else buttons_state &= ~(1<<b3);
-				//}	
+				
 				//}
 				
 				////else down = 0;
@@ -433,16 +438,16 @@ int main(int argc, char** argv) {
 				////}
 			
 			//}
-			//
+			
 			
 			case SDL_JOYBUTTONUP: { //Handle Button Presses
 				int down = ev.type == SDL_JOYBUTTONDOWN;	
 				int b = -1;
 				switch (ev.jbutton.button) {
-					case 16:  b = 0; break;
-					case 17: b = 1; break;
-					case 14:    b = 2; break;
-					case 15:  b = 3; break;
+					//case 16:  b = 0; break;
+					//case 17: b = 1; break;
+					//case 14:    b = 2; break;
+					//case 15:  b = 3; break;
 					case  0: case 1: b=4; break;
 					case  3: case 2: b=5; break;
 					default: break;
@@ -475,7 +480,29 @@ int main(int argc, char** argv) {
 				//}
 			//}
 		}
-
+		
+		axis0 = SDL_JoystickGetAxis(joystick, 0);
+		axis1 = SDL_JoystickGetAxis(joystick, 1);
+		but0=SDL_JoystickGetButton(joystick, 16); //left
+		but1=SDL_JoystickGetButton(joystick, 17); //right
+		but2=SDL_JoystickGetButton(joystick, 14); //up
+		but3=SDL_JoystickGetButton(joystick, 15); //down
+		
+		if (axis0 > deadzone) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
+		else if (axis0 < -deadzone) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
+		else if (but0 != 0) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
+		else if (but1 != 0) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
+		else {buttons_state &= ~(1<<0);buttons_state &= ~(1<<1);}
+		
+		if (axis1 > deadzone) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
+		else if (axis1 < -deadzone) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
+		else if (but2 != 0) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
+		else if (but3 != 0) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
+		else {buttons_state &= ~(1<<2);buttons_state &= ~(1<<3);}
+		
+		
+		
+		
 		if (paused) {
 			int x0 = PICO8_W/2-3*4, y0 = 8;
 			SDL_FillRect(screen, &(SDL_Rect){x0*scale,y0*scale, (6*4+1)*scale, 7*scale}, getcolor(7));
@@ -499,6 +526,7 @@ int main(int argc, char** argv) {
 		static unsigned frame_start = 0;
 		unsigned frame_end = SDL_GetTicks();
 		unsigned frame_time = frame_end-frame_start;
+		//printf("\nvalues : frame_time = %d", frame_time);
 		static const unsigned target_millis = 1000/30;
 		if (frame_time < target_millis) {
 			SDL_Delay((target_millis - frame_time) + (t & 1));
@@ -768,12 +796,12 @@ Celeste_P8_val pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			float y = FLOAT_ARG() - camera_y;
 			int col = INT_ARG() % 16;
 
-#ifdef _3DS
+//#ifdef _3DS
 			if (!strcmp(str, "x+c")) {
 				//this is confusing, as 3DS uses a+b button, so use this hack to make it more appropiate
 				str = "a+b";
 			}
-#endif
+//#endif
 
 			p8_print(str,x,y,col);
 		)
