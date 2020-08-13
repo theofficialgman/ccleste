@@ -5,7 +5,7 @@ echo "Downloading the game"
 wget https://github.com/theofficialgman/ccleste/archive/v1.04.3.zip
 unzip v1.04.3.zip
 rm v1.04.3.zip
-rn ccleste-1.04.3 celeste
+mv ccleste-1.04.3 celeste
 cd celeste
 echo
 echo "Erasing files to save space..."
