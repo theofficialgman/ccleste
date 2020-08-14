@@ -250,7 +250,9 @@ int main(int argc, char** argv) {
 //new stuff
   SDL_Joystick *joystick;
   SDL_JoystickEventState(SDL_ENABLE);
-  joystick = SDL_JoystickOpen(0);
+  if (SDL_NumJoysticks() > 1) joystick = SDL_JoystickOpen(SDL_NumJoysticks()-1);
+  else joystick = SDL_JoystickOpen(0);
+  
 //
 
 	printf("game state size %gkb\n", (long unsigned)Celeste_P8_get_state_size()/1024.);
@@ -299,10 +301,13 @@ int main(int argc, char** argv) {
 	if (initial_game_state) Celeste_P8_save_state(initial_game_state);
 
 	Celeste_P8_init();
-
+	int hat =0;
 	printf("ready\n");
+	printf("%i joysticks detected \n", SDL_NumJoysticks());
 	printf("%i buttons.\n\n", SDL_JoystickNumButtons(joystick));
-
+	printf("%i hats. \n", SDL_JoystickNumHats(joystick));
+	printf("%i axis. \n", SDL_JoystickNumAxes(joystick));
+	if (SDL_JoystickNumHats(joystick) > 0) hat=1;
 	void* game_state = NULL;
 	Mix_Music* game_state_music = NULL;
 
@@ -313,7 +318,7 @@ int main(int argc, char** argv) {
 	int b3=-1;
 	int deadzone = 8000;
 	Sint16 axis0, axis1;
-	Uint8 but0, but1, but2, but3;
+	Uint8 but0, but1, but2, but3, hat0;
 	SDL_WM_ToggleFullScreen(screen);
 	while (running) {
 		Uint8* kbstate = SDL_GetKeyState(NULL);
@@ -335,6 +340,7 @@ int main(int argc, char** argv) {
 		} else reset_input_timer = 0;
 		SDL_Event ev;
 		//printf("\nvalues : juse = %d", juse);
+		
 		while (SDL_PollEvent(&ev)) switch (ev.type) {
 			case SDL_QUIT: running = 0; break;
 			
@@ -475,6 +481,8 @@ int main(int argc, char** argv) {
 				}
 				
 			}
+			 //case SDL_JOYHATMOTION:{  /* Handle Hat Motion */
+    //if ( ev.jhat.value & SDL_HAT_LEFTDOWN ) {printf("downleft detected");}}
 				
 			
 			//case SDL_KEYUP: {
@@ -500,22 +508,44 @@ int main(int argc, char** argv) {
 		
 		axis0 = SDL_JoystickGetAxis(joystick, 0);
 		axis1 = SDL_JoystickGetAxis(joystick, 1);
-		but0=SDL_JoystickGetButton(joystick, 16); //left
-		but1=SDL_JoystickGetButton(joystick, 17); //right
-		but2=SDL_JoystickGetButton(joystick, 14); //up
-		but3=SDL_JoystickGetButton(joystick, 15); //down
 		
-		if (axis0 > deadzone) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
-		else if (axis0 < -deadzone) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
-		else if (but0 != 0) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
-		else if (but1 != 0) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
-		else {buttons_state &= ~(1<<0);buttons_state &= ~(1<<1);}
+		if (hat == 0){
+			but0=SDL_JoystickGetButton(joystick, 16); //left
+			but1=SDL_JoystickGetButton(joystick, 17); //right
+			but2=SDL_JoystickGetButton(joystick, 14); //up
+			but3=SDL_JoystickGetButton(joystick, 15); //down
+			if (axis0 > deadzone) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
+			else if (axis0 < -deadzone) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
+			else if (but0 != 0) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
+			else if (but1 != 0) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
+			else {buttons_state &= ~(1<<0);buttons_state &= ~(1<<1);}
+			
+			if (axis1 > deadzone) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
+			else if (axis1 < -deadzone) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
+			else if (but2 != 0) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
+			else if (but3 != 0) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
+			else {buttons_state &= ~(1<<2);buttons_state &= ~(1<<3);}
+		}
+		else {
+			hat0 = SDL_JoystickGetHat(joystick, 0);
+			//printf("%d\n",hat0);
+			if (axis0 > deadzone) {b=1;buttons_state |= (1<<b);buttons_state &= ~(1<<0);}
+			else if (axis0 < -deadzone) {b=0;buttons_state |= (1<<b);buttons_state &= ~(1<<1);}
+			else if (hat0==2) {buttons_state |= (1<<1);buttons_state &= ~(1<<0);buttons_state &= ~(1<<2);buttons_state &= ~(1<<3);}
+			else if (hat0==8){buttons_state |= (1<<0);buttons_state &= ~(1<<2);buttons_state &= ~(1<<1);buttons_state &= ~(1<<3);}
+			else{buttons_state &= ~(1<<0);buttons_state &= ~(1<<1);}
+			
+			if (axis1 > deadzone) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
+			else if (axis1 < -deadzone) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
+			else if (hat0==1){buttons_state |= (1<<2);buttons_state &= ~(1<<0);buttons_state &= ~(1<<1);buttons_state &= ~(1<<3);}
+			else if (hat0==4){buttons_state |= (1<<3);buttons_state &= ~(1<<0);buttons_state &= ~(1<<1);buttons_state &= ~(1<<2);}
+			else if (hat0==3){buttons_state |= (1<<1);buttons_state |= (1<<2);buttons_state &= ~(1<<3);buttons_state &= ~(1<<0);}
+			else if (hat0==6){buttons_state |= (1<<1);buttons_state |= (1<<3);buttons_state &= ~(1<<2);buttons_state &= ~(1<<0);}
+			else if (hat0==9){buttons_state |= (1<<0);buttons_state |= (1<<2);buttons_state &= ~(1<<3);buttons_state &= ~(1<<1);}
+			else if (hat0==12){buttons_state |= (1<<0);buttons_state |= (1<<3);buttons_state &= ~(1<<1);buttons_state &= ~(1<<2);}
+			else {buttons_state &= ~(1<<2);buttons_state &= ~(1<<3);}
+		}
 		
-		if (axis1 > deadzone) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
-		else if (axis1 < -deadzone) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
-		else if (but2 != 0) {b=2;buttons_state |= (1<<b);buttons_state &= ~(1<<3);}
-		else if (but3 != 0) {b=3;buttons_state |= (1<<b);buttons_state &= ~(1<<2);}
-		else {buttons_state &= ~(1<<2);buttons_state &= ~(1<<3);}
 		
 		
 		
