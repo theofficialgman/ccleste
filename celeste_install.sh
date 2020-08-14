@@ -27,10 +27,11 @@ rm celeste.h
 echo
 echo "Adding to applications menu"
 echo
+sudo rm -f /usr/share/applications/celeste.desktop
 sudo mv celeste.desktop -t /usr/share/applications
 cd
+sudo rm -rf /usr/share/celeste
 sudo mv celeste -t /usr/share
-
 echo
 echo "Game installed!"
 sleep 2

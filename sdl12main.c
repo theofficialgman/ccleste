@@ -8,6 +8,7 @@
 #include <3ds.h>
 #endif
 #include "celeste.h"
+#include <SDL_syswm.h>
 
 static void ErrLog(char* fmt, ...) {
 #ifdef _3DS
@@ -218,6 +219,20 @@ int main(int argc, char** argv) {
 	SDL_N3DSKeyBind(KEY_L, SDLK_d); //load state
 	SDL_N3DSKeyBind(KEY_R, SDLK_s); //save state
 #endif
+	
+	SDL_Rect **modes;
+    int i;
+    int height;
+	modes=SDL_ListModes(NULL, SDL_FULLSCREEN|SDL_HWSURFACE);
+    printf("Available Modes\n");
+    for(i=0;modes[i];++i) {printf("  %d x %d\n", modes[i]->w, modes[i]->h);}
+	height = modes[0]->h;
+	if (height < 1080) scale=6;
+	else if (height == 1080) scale=8;
+	else if (height == 1440) scale=10;
+	else if (height >= 2160) scale=16;
+	else scale=6;
+	//printf("%d",height);
 	SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
 	SDL_WM_SetCaption("Celeste", NULL);
 	int mixflag = MIX_INIT_OGG;
@@ -227,6 +242,8 @@ int main(int argc, char** argv) {
 	if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) < 0) {
 		ErrLog("Mix_Init: %s\n", Mix_GetError());
 	}
+	
+	
 	ResetPalette();
 	SDL_ShowCursor(0);
 
