@@ -267,7 +267,7 @@ int main(int argc, char** argv) {
 	SDL_GetCurrentDisplayMode(0, &DM);
 	auto Width = DM.w;
 	auto Height = DM.h;
-	if (Height < 1080) scale=6;
+	if (Height < 1080) scale=5;
 	else if (Height == 1080) scale=8;
 	else if (Height == 1440) scale=10;
 	else if (Height >= 2160) scale=16;

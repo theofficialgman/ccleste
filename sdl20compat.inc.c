@@ -13,7 +13,7 @@ static SDL_Window* sdlWindow = NULL;
 static SDL_Renderer* renderer = NULL;
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags) {
   if (!sdl2_window) {
-    sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, 0);
+    sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_INPUT_FOCUS);
     if (!sdl2_window) return NULL;
   }
   sdl2_screen = SDL_GetWindowSurface(sdl2_window);
@@ -46,18 +46,18 @@ static int SDL_WM_ToggleFullScreen(SDL_Surface* screen) {
 								 SDL_WINDOWPOS_CENTERED,
 								 SDL_WINDOWPOS_CENTERED,
 								 Width, Height,
-								 SDL_WINDOW_BORDERLESS);
+								 SDL_WINDOW_FULLSCREEN);
 	  renderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 	  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	  SDL_RenderClear(renderer);
 	  SDL_RenderPresent(renderer);
 	  SDL_SetWindowBordered(sdl2_window, SDL_FALSE);
-	  SDL_RaiseWindow(sdl2_window);
+	  //SDL_RaiseWindow(sdl2_window);
   }
   else {
 	   SDL_DestroyWindow(sdlWindow);
 	   SDL_SetWindowBordered(sdl2_window, SDL_TRUE);
-	   SDL_RaiseWindow(sdl2_window);
+	   //SDL_RaiseWindow(sdl2_window);
    }
   //return SDL_SetWindowFullscreen(sdl2_window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) == 0;
 }
