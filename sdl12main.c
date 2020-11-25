@@ -419,6 +419,12 @@ static void mainLoop(void) {
 	if (press_home) {
 		goto press_exit;
 	}
+	if ((buttons_state>>6) & 1){
+		goto save_state;
+	}
+	if ((buttons_state>>7) & 1){
+		goto load_state;
+	}
 #endif
 
 	SDL_Event ev;
@@ -437,7 +443,7 @@ static void mainLoop(void) {
 				press_exit:
 				running = 0;
 				break;
-			} else if ((ev.key.keysym.sym == SDLK_F11 && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_ESCAPE])) || (buttons_state & (1 << 8))) {
+			} else if (ev.key.keysym.sym == SDLK_F11 && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_ESCAPE])) {
 				if (SDL_WM_ToggleFullScreen(screen)) { //this doesn't work on windows..
 					OSDset("toggle fullscreen");
 				}
@@ -447,6 +453,7 @@ static void mainLoop(void) {
 				Celeste_P8__DEBUG();
 				break;
 			} else if (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_LSHIFT]) { //save state
+				save_state:
 				game_state = game_state ? game_state : SDL_malloc(Celeste_P8_get_state_size());
 				if (game_state) {
 					OSDset("save state");
@@ -455,6 +462,7 @@ static void mainLoop(void) {
 				}
 				break;
 			} else if (ev.key.keysym.sym == SDLK_d && kbstate[SDLK_LSHIFT]) { //load state
+				load_state:
 				if (game_state) {
 					OSDset("load state");
 					if (paused) paused = 0, Mix_Resume(-1), Mix_ResumeMusic();
@@ -781,12 +789,12 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			int y = INT_ARG() - camera_y;
 			int col = INT_ARG() % 16;
 
-#ifdef _3DS
+//#ifdef _3DS
 			if (!strcmp(str, "x+c")) {
 				//this is confusing, as 3DS uses a+b button, so use this hack to make it more appropiate
 				str = "a+b";
 			}
-#endif
+//#endif
 
 			p8_print(str,x,y,col);
 		} break;
@@ -924,16 +932,16 @@ struct mapping {
 	Uint8 pico8_btn;
 };
 static struct mapping controller_mappings[] = {
-	{SDL_CONTROLLER_BUTTON_A,            4}, //jump
-	{SDL_CONTROLLER_BUTTON_B,            5}, //dash
+	{SDL_CONTROLLER_BUTTON_B,            4}, //jump
+	{SDL_CONTROLLER_BUTTON_A,            5}, //dash
 	{SDL_CONTROLLER_BUTTON_DPAD_LEFT,    0}, //left
 	{SDL_CONTROLLER_BUTTON_DPAD_RIGHT,   1}, //right
 	{SDL_CONTROLLER_BUTTON_DPAD_UP,      2}, //up
 	{SDL_CONTROLLER_BUTTON_DPAD_DOWN,    3}, //down
-	{SDL_CONTROLLER_BUTTON_START,        6}, //plus
-	{SDL_CONTROLLER_BUTTON_BACK,         7}, //minus
+	{SDL_CONTROLLER_BUTTON_LEFTSHOULDER,      6}, //up
+	{SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,    7}, //down	
 };
-static const Uint16 stick_deadzone = 32767 / 2; //about half
+static const Uint16 stick_deadzone = 32767 / 4; //about 1/4
 
 static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause, _Bool* out_home) {
 	static SDL_GameController* controller = NULL;
@@ -974,7 +982,7 @@ static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause, _Bool* o
 	}
 	previously_pressed_start = pressed_start;
 	
-	*out_home = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_BACK);
+	*out_home = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_GUIDE);
 
 	//joystick -> dpad input
 	Sint16 x_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
