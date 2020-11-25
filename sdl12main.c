@@ -243,7 +243,8 @@ static FILE* TAS = NULL;
 int main(int argc, char** argv) {
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
 #if SDL_MAJOR_VERSION >= 2
-	SDL_InitSubSystem(SDL_INIT_JOYSTICK);
+	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+	SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
 
 #endif
 	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
@@ -262,8 +263,19 @@ int main(int argc, char** argv) {
 	SDL_N3DSKeyBind(KEY_L, SDLK_d); //load state
 	SDL_N3DSKeyBind(KEY_R, SDLK_s); //save state
 #endif
+	SDL_DisplayMode DM;
+	SDL_GetCurrentDisplayMode(0, &DM);
+	auto Width = DM.w;
+	auto Height = DM.h;
+	if (Height < 1080) scale=6;
+	else if (Height == 1080) scale=8;
+	else if (Height == 1440) scale=10;
+	else if (Height >= 2160) scale=16;
+	else scale=6;
+	printf("  %d x %d\n", Width, Height);
 	SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
 	SDL_WM_SetCaption("Celeste", NULL);
+	SDL_WM_ToggleFullScreen(screen);
 	int mixflag = MIX_INIT_OGG;
 	if (Mix_Init(mixflag) != mixflag) {
 		ErrLog("Mix_Init: %s\n", Mix_GetError());
@@ -366,7 +378,7 @@ int main(int argc, char** argv) {
 }
 
 #if SDL_MAJOR_VERSION >= 2
-static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause);
+static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause, _Bool* out_home);
 #endif
 
 static void mainLoop(void) {
@@ -399,9 +411,13 @@ static void mainLoop(void) {
 #if SDL_MAJOR_VERSION >= 2
 	SDL_GameControllerUpdate();
 	_Bool press_pause = 0;
-	ReadGamepadInput(&buttons_state, &press_pause);
+	_Bool press_home = 0;
+	ReadGamepadInput(&buttons_state, &press_pause, &press_home);
 	if (press_pause) {
 		goto toggle_pause;
+	}
+	if (press_home) {
+		goto press_exit;
 	}
 #endif
 
@@ -417,7 +433,11 @@ static void mainLoop(void) {
 				if (paused) Mix_Resume(-1), Mix_ResumeMusic(); else Mix_Pause(-1), Mix_PauseMusic();
 				paused = !paused;
 				break;
-			} else if (ev.key.keysym.sym == SDLK_F11 && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_ESCAPE])) {
+			} else if (ev.key.keysym.sym == SDLK_DELETE) { //exit
+				press_exit:
+				running = 0;
+				break;
+			} else if ((ev.key.keysym.sym == SDLK_F11 && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_ESCAPE])) || (buttons_state & (1 << 8))) {
 				if (SDL_WM_ToggleFullScreen(screen)) { //this doesn't work on windows..
 					OSDset("toggle fullscreen");
 				}
@@ -904,16 +924,18 @@ struct mapping {
 	Uint8 pico8_btn;
 };
 static struct mapping controller_mappings[] = {
-	{SDL_CONTROLLER_BUTTON_A,          4}, //jump
-	{SDL_CONTROLLER_BUTTON_B,          5}, //dash
-	{SDL_CONTROLLER_BUTTON_DPAD_LEFT,  0}, //left
-	{SDL_CONTROLLER_BUTTON_DPAD_RIGHT, 1}, //right
-	{SDL_CONTROLLER_BUTTON_DPAD_UP,    2}, //up
-	{SDL_CONTROLLER_BUTTON_DPAD_DOWN,  3}, //down
+	{SDL_CONTROLLER_BUTTON_A,            4}, //jump
+	{SDL_CONTROLLER_BUTTON_B,            5}, //dash
+	{SDL_CONTROLLER_BUTTON_DPAD_LEFT,    0}, //left
+	{SDL_CONTROLLER_BUTTON_DPAD_RIGHT,   1}, //right
+	{SDL_CONTROLLER_BUTTON_DPAD_UP,      2}, //up
+	{SDL_CONTROLLER_BUTTON_DPAD_DOWN,    3}, //down
+	{SDL_CONTROLLER_BUTTON_START,        6}, //plus
+	{SDL_CONTROLLER_BUTTON_BACK,         7}, //minus
 };
 static const Uint16 stick_deadzone = 32767 / 2; //about half
 
-static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause) {
+static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause, _Bool* out_home) {
 	static SDL_GameController* controller = NULL;
 	if (!controller) {
 		static int tries_left = 30;
@@ -951,6 +973,8 @@ static void ReadGamepadInput(Uint8* out_buttons, _Bool* out_presspause) {
 		*out_presspause = 1;
 	}
 	previously_pressed_start = pressed_start;
+	
+	*out_home = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_BACK);
 
 	//joystick -> dpad input
 	Sint16 x_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);

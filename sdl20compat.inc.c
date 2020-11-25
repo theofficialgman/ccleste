@@ -9,9 +9,11 @@ enum {
 };
 static SDL_Surface* sdl2_screen = NULL;
 static SDL_Window* sdl2_window = NULL;
+static SDL_Window* sdlWindow = NULL;
+static SDL_Renderer* renderer = NULL;
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags) {
   if (!sdl2_window) {
-    sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0);
+    sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, 0);
     if (!sdl2_window) return NULL;
   }
   sdl2_screen = SDL_GetWindowSurface(sdl2_window);
@@ -35,7 +37,29 @@ static int SDL_WM_ToggleFullScreen(SDL_Surface* screen) {
   assert(sdl2_window != NULL);
   static int fullscreen = 0;
   fullscreen = !fullscreen;
-  return SDL_SetWindowFullscreen(sdl2_window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) == 0;
+  if (fullscreen != 0) {
+	  SDL_DisplayMode DM;
+	  SDL_GetCurrentDisplayMode(0, &DM);
+	  auto Width = DM.w;
+	  auto Height = DM.h;
+	  sdlWindow = SDL_CreateWindow("black",
+								 SDL_WINDOWPOS_CENTERED,
+								 SDL_WINDOWPOS_CENTERED,
+								 Width, Height,
+								 SDL_WINDOW_BORDERLESS);
+	  renderer = SDL_CreateRenderer(sdlWindow, -1, 0);
+	  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	  SDL_RenderClear(renderer);
+	  SDL_RenderPresent(renderer);
+	  SDL_SetWindowBordered(sdl2_window, SDL_FALSE);
+	  SDL_RaiseWindow(sdl2_window);
+  }
+  else {
+	   SDL_DestroyWindow(sdlWindow);
+	   SDL_SetWindowBordered(sdl2_window, SDL_TRUE);
+	   SDL_RaiseWindow(sdl2_window);
+   }
+  //return SDL_SetWindowFullscreen(sdl2_window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) == 0;
 }
 static SDL_Surface* SDL_GetVideoSurface(void) {
   return sdl2_screen = SDL_GetWindowSurface(sdl2_window);
@@ -52,6 +76,7 @@ static void SDL_Flip_(SDL_Surface* screen) {
 //the above function now returns array indexed by scancodes, so we need to use those constants
 #define SDLK_F9 SDL_SCANCODE_F9
 #define SDLK_ESCAPE SDL_SCANCODE_ESCAPE
+#define SDLK_DELETE SDL_SCANCODE_DELETE
 #define SDLK_F11 SDL_SCANCODE_F11
 #define SDLK_LSHIFT SDL_SCANCODE_LSHIFT
 #define SDLK_LEFT SDL_SCANCODE_LEFT
