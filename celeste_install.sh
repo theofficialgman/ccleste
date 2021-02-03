@@ -14,10 +14,11 @@ cd ..
 rm -r Celeste
 echo
 echo "Downloading the game"
+mkdir celeste
+cd celeste
 wget https://github.com/theofficialgman/ccleste/releases/download/v1.4.0/celeste.zip
 unzip celeste.zip
 rm celeste.zip
-cd celeste
 chmod 777 cceleste
 echo
 echo "Adding to applications menu"
