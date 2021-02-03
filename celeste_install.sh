@@ -1,5 +1,6 @@
 clear
 cd
+cd /tmp
 echo "Celeste Pico 8 script started!"
 echo "Installing Dependencies"
 echo
