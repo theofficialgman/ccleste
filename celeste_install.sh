@@ -14,24 +14,11 @@ cd
 rm -r Celeste
 echo
 echo "Downloading the game"
-wget https://github.com/theofficialgman/ccleste/archive/v1.3.1.zip
-unzip v1.3.1.zip
-rm v1.3.1.zip
-mv ccleste-1.3.1 celeste
+wget https://github.com/theofficialgman/ccleste/releases/download/v1.4.0/celeste.zip
+unzip celeste.zip
+rm celeste.zip
 cd celeste
 chmod 777 cceleste
-echo
-echo "Erasing files to save space..."
-echo
-rm winbuild.sh
-rm tilemap.h
-rm .gitignore
-rm movie-100tas.ltm
-rm Makefile.3ds
-rm Makefile
-rm sdl12main.c
-rm celeste.c
-rm celeste.h
 echo
 echo "Adding to applications menu"
 echo
