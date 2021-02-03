@@ -1,5 +1,4 @@
 clear
-cd
 cd /tmp
 echo "Celeste Pico 8 script started!"
 echo "Installing Dependencies"
@@ -11,7 +10,7 @@ svn export https://github.com/cobalt2727/L4T-Megascript/trunk/assets/Celeste
 cd Celeste
 rm -rf /$HOME/RetroPie/roms/ports/Celeste.sh
 mv Celeste.sh -t /$HOME/RetroPie/roms/ports
-cd
+cd /tmp
 rm -r Celeste
 echo
 echo "Downloading the game"
