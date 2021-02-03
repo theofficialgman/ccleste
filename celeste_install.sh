@@ -10,7 +10,7 @@ svn export https://github.com/cobalt2727/L4T-Megascript/trunk/assets/Celeste
 cd Celeste
 rm -rf /$HOME/RetroPie/roms/ports/Celeste.sh
 mv Celeste.sh -t /$HOME/RetroPie/roms/ports
-cd /tmp
+cd ..
 rm -r Celeste
 echo
 echo "Downloading the game"
@@ -24,7 +24,7 @@ echo "Adding to applications menu"
 echo
 sudo rm -f /usr/share/applications/celeste.desktop
 sudo mv celeste.desktop -t /usr/share/applications
-cd
+cd ..
 sudo rm -rf /usr/share/celeste
 sudo mv celeste -t /usr/share
 echo
