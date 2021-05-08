@@ -5,12 +5,12 @@ echo "Installing Dependencies"
 echo
 sudo apt install --assume-yes subversion libsdl1.2-dev libsdl2-mixer-dev libsdl2-dev libsdl-mixer1.2-dev libsdl2-image-dev
 sudo apt install --assume-yes libsndio*
-svn export https://github.com/cobalt2727/L4T-Megascript/trunk/assets/Celeste
-cd Celeste
-rm -rf /$HOME/RetroPie/roms/ports/Celeste.sh
-mv Celeste.sh -t /$HOME/RetroPie/roms/ports
-cd ..
-rm -r Celeste
+# svn export https://github.com/cobalt2727/L4T-Megascript/trunk/assets/Celeste
+# cd Celeste
+# rm -rf /$HOME/RetroPie/roms/ports/Celeste.sh
+# mv Celeste.sh -t /$HOME/RetroPie/roms/ports
+# cd ..
+# rm -r Celeste
 echo
 echo "Downloading the game"
 mkdir celeste
